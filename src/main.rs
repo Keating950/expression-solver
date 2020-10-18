@@ -8,6 +8,14 @@ use std::{collections::HashSet, io, io::Read};
 extern crate regex;
 use regex::{Regex, RegexBuilder};
 use rustyline::{error::ReadlineError, Editor, EditMode, Helper, Config};
+extern crate nom;
+use nom::{
+    IResult,
+    bytes::complete::{tag, take_while_m_n},
+    combinator::map_res,
+    sequence::tuple
+};
+
 
 const PROMPT: &'static str = ">>> ";
 

@@ -8,4 +8,5 @@ edition = "2018"
 
 [dependencies]
 regex = "1"
-rustyline = "6.3"
+rustyline = "6"
+nom = "5"
