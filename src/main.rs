@@ -1,62 +1,86 @@
 #![allow(unused_variables)]
+#![allow(unused_macros)]
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-mod types;
-use crate::types::{Expr, Prop};
-use std::{collections::HashSet, io, io::Read};
 extern crate regex;
 use regex::{Regex, RegexBuilder};
 use rustyline::{error::ReadlineError, Editor, EditMode, Helper, Config};
-extern crate nom;
-use nom::{
-    IResult,
-    bytes::complete::{tag, take_while_m_n},
-    combinator::map_res,
-    sequence::tuple
+#[macro_use]
+extern crate pest;
+#[macro_use]
+extern crate pest_derive;
+use std::{collections::HashSet, io, io::Read};
+mod types;
+mod parsing;
+use crate::{types::*, parsing::*};
+use pest::{
+    prec_climber::{PrecClimber, Operator, Assoc},
+    iterators::Pair,
+    Parser,
 };
-
 
 const PROMPT: &'static str = ">>> ";
 
-fn main() {
-    let cfg = Config::builder()
-        .auto_add_history(true)
-        .tab_stop(4)
-        .edit_mode(EditMode::Vi)
-        .build();
-    let mut rl = Editor::<()>::with_config(cfg);
-    let vars = def_vars(&mut rl).unwrap();
-    for v in vars { println!("{}", v) }
+macro_rules! mkerr {
+    ($msg:tt) => { io::Error::new(io::ErrorKind::InvalidInput, $msg) };
+    ($kind:tt, $msg:tt) => { io::Error::new(io::ErrorKind::$kind, $msg) };
 }
 
-fn def_vars<H: Helper>(rl: &mut Editor<H>) -> io::Result<Vec<Prop>> {
-    fn input_to_bool(s: &str) -> Option<bool> {
-        let s_lc = s.to_lowercase();
-        if ["t", "true"].contains(&&*s_lc) { return Some(true); }
-        if ["f", "false"].contains(&&*s_lc) { return Some(false); }
-        None
-    }
+fn main() {
+    /*    let cfg = Config::builder()
+            .auto_add_history(true)
+            .tab_stop(4)
+            .edit_mode(EditMode::Vi)
+            .build();
+        let rl = Editor::<()>::with_config(cfg);
+    */
+    let _climber = PrecClimber::new(vec![
+        Operator::new(Rule::and, Assoc::Left)
+            | Operator::new(Rule::or, Assoc::Left)
+            | Operator::new(Rule::superset, Assoc::Left),
+        Operator::new(Rule::neg, Assoc::Right),
+    ]);
+    let pairs = ExpressionParser::parse(Rule::expression, "(!P|P)&Q").expect("Parse failure");
+    for pair in pairs { print_pair(pair) }
+}
 
-    let mut vars: Vec<Prop> = Vec::with_capacity(2);
+fn print_pair(p: Pair<Rule>) {
+    fn inner(p: Pair<Rule>) {
+        match p.as_rule() {
+            Rule::expression => {
+                println!("Expression:\t{}", p.as_str());
+                for subp in p.into_inner() { inner(subp) }
+            }
+            Rule::primary => println!("Primary:\t{}", p.as_str()),
+            Rule::ident => println!("Ident:\t{}", p.as_str()),
+            Rule::and => println!("And:\t{}", p.as_str()),
+            Rule::or => println!("Or:\t{}", p.as_str()),
+            Rule::superset => println!("Superset:\t{}", p.as_str()),
+            Rule::neg => println!("Neg:\t{}", p.as_str()),
+            // _ => unreachable!()
+        };
+    }
+    println!("Rule:\t{:?}", p.as_rule());
+    println!("Span:\t{:?}", p.as_span());
+    println!("Text:\t{}", p.as_str());
+    for inner_pair in p.into_inner() {inner(inner_pair)}
+}
+
+fn def_vars<H: Helper>(rl: &mut Editor<H>) -> Option<Vec<Prop>> {
+    // let mut vars: Vec<Prop> = Vec::with_capacity(2);
     const HELP_MSG: &'static str = "Define your variables (syntax: p = true):";
     println!("{}", HELP_MSG);
-    while let Ok(line) = rl.readline(PROMPT) {
-        if line.is_empty() { break; }
-        let (var, val) = (|| {
-            let arr: Vec<&str> = line.split("=").take(2).map(|s| s.trim()).collect();
-            (arr[0], arr[1])
-        })();
-        match input_to_bool(val) {
-            Some(val) => vars.push(Prop::new(var, val)),
-            None => eprintln!("{}", HELP_MSG),
-        }
-    }
-    Ok(vars)
-}
-
-fn parse_line(line: &str) -> Box<Expr> {
     unimplemented!();
+    /*    while let Ok(line) = rl.readline(PROMPT) {
+            if line.is_empty() { break; }
+            match parse_prop(line.as_bytes()) {
+                Ok(([], (name, val))) => vars.push(Prop::new(name, val)),
+                _ => eprintln!("{}", HELP_MSG),
+            }
+        }
+        if vars.len() > 0 { Some(vars) } else { None }
+    */
 }
 
 fn eval_expr(e: &Expr) -> bool {
@@ -75,6 +99,7 @@ fn eval_expr(e: &Expr) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::*;
+    use std::iter::FromIterator;
 
     #[test]
     fn test_eval_expr() {
@@ -100,4 +125,10 @@ mod tests {
         );
         assert_eq!(eval_expr(&e2), true);
     }
+    // #[test]
+    // fn test_parse_expr() {
+    //     let e1 = "p and q";
+    //     let e1_set: HashSet<String> = HashSet::from_iter(["p", "q"].iter().map(|s| s.to_string()));
+    //     match parse_expr(e1.as_bytes(), e1_set) { _ => () };
+    // }
 }
