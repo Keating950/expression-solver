@@ -2,7 +2,7 @@ use std::fmt;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Prop {
-    pub name: String,
+    pub name: char,
     pub val: bool,
 }
 
@@ -13,7 +13,7 @@ impl fmt::Display for Prop {
 }
 
 impl Prop {
-    pub fn new<S: Into<String>>(id: S, val: bool) -> Prop {
+    pub fn new<S: Into<char>>(id: S, val: bool) -> Prop {
         Prop { name: id.into(), val }
     }
 }
