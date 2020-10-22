@@ -50,7 +50,7 @@ fn main() {
                 continue;
             }
         };
-        let mut expr = match shunting_yard(&*line) {
+        let mut expr = match shunting_yard(&line) {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("{}", e);
