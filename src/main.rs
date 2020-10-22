@@ -166,7 +166,7 @@ fn eval_postfix(expr: &mut VecDeque<char>, vars: &HashMap<char, bool>) -> Result
             }
             '>' => {
                 let result = match (pop!(stack, c), pop!(stack, c)) {
-                    (true, false) => false,
+                    (false, true) => false,
                     (_, _) => true,
                 };
                 stack.push(result);
@@ -190,5 +190,19 @@ mod tests {
         assert_eq!(shunting_yard("!Q & P").unwrap(), vec!['Q', '!', 'P', '&']);
         assert_eq!(shunting_yard("Q | P").unwrap(), vec!['Q', 'P', '|']);
         assert_eq!(shunting_yard("!Q & !P").unwrap(), vec!['Q', '!', 'P', '!', '&']);
+    }
+    #[test]
+    fn test_eval() {
+        let mut map1 = HashMap::new();
+        map1.insert('P', true);
+        map1.insert('Q', true);
+        let mut stack1 = shunting_yard("Q & P").unwrap();
+        assert_eq!(eval_postfix(&mut stack1, &map1).unwrap(), true);
+        let mut stack2 = shunting_yard("!Q & !P").unwrap();
+        assert_eq!(eval_postfix(&mut stack2, &map1).unwrap(), false);
+        let mut stack3 = shunting_yard("Q > P").unwrap();
+        assert_eq!(eval_postfix(&mut stack3, &map1).unwrap(), true);
+        let mut stack4 = shunting_yard("Q > !P").unwrap();
+        assert_eq!(eval_postfix(&mut stack4, &map1).unwrap(), false);
     }
 }
