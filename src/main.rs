@@ -8,16 +8,11 @@ use std::{
 };
 
 macro_rules! readline {
-    ($rl:ident) => {
-        $rl.readline(">>> ")
-    };
+    ($rl:ident) => { $rl.readline(">>> ") };
 }
 macro_rules! mkerr {
-    ($msg:tt) => {
+    ($msg:expr) => {
         io::Error::new(io::ErrorKind::InvalidInput, $msg)
-    };
-    ($kind:tt, $msg:tt) => {
-        io::Error::new(io::ErrorKind::$kind, $msg)
     };
 }
 
@@ -128,8 +123,7 @@ fn shunting_yard(line: &str) -> io::Result<VecDeque<char>> {
             },
             'a'..='z' | 'A'..='Z' => output_queue.push_back(c),
             other => {
-                let msg = format!("Encountered unexpected symbol {}", other);
-                return Err(mkerr!(msg));
+                return Err(mkerr!(format!("Encountered unexpected symbol {}", other)));
             }
         }
     }

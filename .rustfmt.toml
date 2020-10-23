@@ -1,0 +1,6 @@
+version = "Two"
+max_width = 110
+width_heuristics = "Max"
+fn_single_line = true
+merge_imports = true
+newline_style = "Unix"
