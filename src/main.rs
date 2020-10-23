@@ -172,7 +172,7 @@ fn eval_postfix(expr: &mut VecDeque<char>, vars: &HashMap<char, bool>) -> Result
     if stack.len() == 1 {
         Ok(stack[0])
     } else {
-        Err(Box::new(mkerr!( "Could not evaluate expression: Excess tokens received")))
+        Err(Box::new(mkerr!("Could not evaluate expression: Excess tokens received")))
     }
 }
 
@@ -181,23 +181,33 @@ mod tests {
     use crate::*;
     #[test]
     fn test_shunting_yard() {
-        assert_eq!(shunting_yard("Q & P").unwrap(), vec!['Q', 'P', '&']);
-        assert_eq!(shunting_yard("!Q & P").unwrap(), vec!['Q', '!', 'P', '&']);
-        assert_eq!(shunting_yard("Q | P").unwrap(), vec!['Q', 'P', '|']);
-        assert_eq!(shunting_yard("!Q & !P").unwrap(), vec!['Q', '!', 'P', '!', '&']);
+        macro_rules! test {
+            ($expr:literal, $vec:expr) => {
+                assert_eq!(shunting_yard($expr).unwrap(), $vec);
+            };
+        }
+        test!("Q & P", vec!['Q', 'P', '&']);
+        test!("!Q & P", vec!['Q', '!', 'P', '&']);
+        test!("Q | P", vec!['Q', 'P', '|']);
+        test!("!Q & !P", vec!['Q', '!', 'P', '!', '&']);
     }
     #[test]
     fn test_eval() {
-        let mut map1 = HashMap::new();
-        map1.insert('P', true);
-        map1.insert('Q', true);
-        let mut stack1 = shunting_yard("Q & P").unwrap();
-        assert_eq!(eval_postfix(&mut stack1, &map1).unwrap(), true);
-        let mut stack2 = shunting_yard("!Q & !P").unwrap();
-        assert_eq!(eval_postfix(&mut stack2, &map1).unwrap(), false);
-        let mut stack3 = shunting_yard("Q > P").unwrap();
-        assert_eq!(eval_postfix(&mut stack3, &map1).unwrap(), true);
-        let mut stack4 = shunting_yard("Q > !P").unwrap();
-        assert_eq!(eval_postfix(&mut stack4, &map1).unwrap(), false);
+        macro_rules! test {
+            ($expr:literal, $map:ident, $val:literal) => {
+                assert_eq!(eval_postfix(&mut shunting_yard($expr).unwrap(), &$map).unwrap(), $val);
+            };
+        }
+        let mut map = HashMap::new();
+        map.insert('P', true);
+        map.insert('Q', true);
+        test!("Q & P", map, true);
+        test!("Q & !P", map, false);
+        test!("!Q & !P", map, false);
+        test!("Q > P", map, true);
+        test!("Q > !P", map, false);
+        test!("!Q > P", map, true);
+        test!("!(Q & P)", map, false);
+        test!("!!(Q & P)", map, true);
     }
 }
