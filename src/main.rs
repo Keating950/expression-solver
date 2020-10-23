@@ -151,17 +151,18 @@ fn eval_postfix(expr: &mut VecDeque<char>, vars: &HashMap<char, bool>) -> Result
                 stack.push(!a)
             }
             '|' => {
-                let (a, b) = (pop!(stack, c), pop!(stack, c));
+                let (b, a) = (pop!(stack, c), pop!(stack, c));
                 stack.push(a || b)
             }
             '&' => {
-                let (a, b) = (pop!(stack, c), pop!(stack, c));
+                let (b, a) = (pop!(stack, c), pop!(stack, c));
                 stack.push(a && b)
             }
             '>' => {
-                let result = match (pop!(stack, c), pop!(stack, c)) {
-                    (false, true) => false,
-                    (_, _) => true,
+                let (b, a) = (pop!(stack, c), pop!(stack, c));
+                let result = match (a, b) {
+                    (true, false) => false,
+                    (_, _) => true
                 };
                 stack.push(result);
             }
